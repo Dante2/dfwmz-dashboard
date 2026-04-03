@@ -56,6 +56,51 @@ fig2.add_annotation(
     arrowhead=2, arrowcolor='#FF6B00', font=dict(color='#FF6B00')
 )
 
+# Borough heatmap
+heatmap_data = london_boroughs_ts.pivot(
+    index='Geography',
+    columns='year_start',
+    values='mean_anxiety_score'
+)
+fig5 = px.imshow(
+    heatmap_data,
+    color_continuous_scale=['#111111', '#FF6B00'],
+    title='Anxiety Levels by London Borough and Year',
+    labels=dict(x='Year', y='Borough', color='Anxiety Score'),
+    aspect='auto'
+)
+fig5.update_layout(
+    paper_bgcolor='#111111',
+    plot_bgcolor='#111111',
+    font_color='#FF6B00',
+    title_font_color='#FF6B00',
+    height=700,
+    margin=dict(l=150, r=0, t=40, b=0)
+)
+
+# Animated race
+fig6 = px.bar(
+    london_boroughs_ts.sort_values(['year_start', 'mean_anxiety_score'], ascending=[True, True]),
+    x='mean_anxiety_score',
+    y='Geography',
+    orientation='h',
+    animation_frame='year_start',
+    range_x=[2, 4.5],
+    color='mean_anxiety_score',
+    color_continuous_scale=['#111111', '#FF6B00'],
+    title='London Borough Anxiety Scores Over Time',
+    labels=dict(mean_anxiety_score='Mean Anxiety Score', Geography='Borough')
+)
+fig6.update_layout(
+    paper_bgcolor='#111111',
+    plot_bgcolor='#111111',
+    font_color='#FF6B00',
+    title_font_color='#FF6B00',
+    height=700,
+    margin=dict(l=150, r=0, t=40, b=0),
+    coloraxis_showscale=False
+)
+
 # Load GeoJSON
 url = "https://raw.githubusercontent.com/radoi90/housequest-data/master/london_boroughs.geojson"
 with urllib.request.urlopen(url) as response:
@@ -114,6 +159,16 @@ app.layout = html.Div(
                         html.Div(dcc.Graph(figure=fig2), style={'flex': '1'}),
                     ]
                 ),
+            ]
+        ),
+
+        # Section 2: Deeper London
+        html.Div(
+            style={'padding': '40px', 'borderTop': '1px solid #333333'},
+            children=[
+                html.H2("Deeper London", style={'color': '#FF6B00', 'marginBottom': '20px'}),
+                dcc.Graph(figure=fig5),
+                dcc.Graph(figure=fig6),
             ]
         ),
 
