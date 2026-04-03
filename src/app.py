@@ -195,7 +195,7 @@ app.layout = html.Div(
                     style={'display': 'flex', 'gap': '20px'},
                     children=[
                         html.Div(dcc.Graph(figure=fig1), style={'flex': '1'}),
-                        html.Div(dcc.Graph(figure=fig2), style={'flex': '1'}),
+                        html.Div(dcc.Graph(figure=fig5), style={'flex': '1'}),
                     ]
                 ),
             ]
@@ -206,7 +206,7 @@ app.layout = html.Div(
             style={'padding': '40px', 'borderTop': '1px solid #333333'},
             children=[
                 html.H2("Deeper London", style={'color': '#FF6B00', 'marginBottom': '20px'}),
-                dcc.Graph(figure=fig5),
+                dcc.Graph(figure=fig2),
                 dcc.Graph(figure=fig6),
             ]
         ),
