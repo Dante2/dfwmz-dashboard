@@ -140,6 +140,38 @@ fig7.update_layout(
     yaxis=dict(gridcolor='#222222'),
 )
 
+# Single dot scatter
+scatter_pivot = all_measures_borough.groupby(['Geography', 'measure-of-wellbeing'])['v4_3'].mean().reset_index()
+scatter_pivot = scatter_pivot.pivot(index='Geography', columns='measure-of-wellbeing', values='v4_3').reset_index()
+
+fig8 = px.scatter(
+    scatter_pivot,
+    x='anxiety',
+    y='happiness',
+    size='life-satisfaction',
+    hover_name='Geography',
+    title='Anxiety vs Happiness by London Borough (Mean)',
+    labels=dict(anxiety='Mean Anxiety Score', happiness='Mean Happiness Score')
+)
+fig8.update_traces(
+    marker=dict(color='#FF6B00', opacity=0.7),
+    hovertemplate='<b>%{hovertext}</b><br>Anxiety: %{x:.2f}<br>Happiness: %{y:.2f}<extra></extra>',
+    text=scatter_pivot['Geography'],
+    textposition='top center',
+    textfont=dict(size=8, color='#FF6B00'),
+    mode='markers+text'
+)
+fig8.update_layout(
+    paper_bgcolor='#111111',
+    plot_bgcolor='#111111',
+    font_color='#FF6B00',
+    title_font_color='#FF6B00',
+    height=600,
+    xaxis=dict(gridcolor='#222222'),
+    yaxis=dict(gridcolor='#222222'),
+    showlegend=False
+)
+
 # UK Regional data
 uk_regions = ['London', 'North East', 'North West', 'Yorkshire and The Humber', 
               'East Midlands', 'West Midlands', 'East of England', 
@@ -286,7 +318,13 @@ app.layout = html.Div(
             style={'padding': '40px', 'borderTop': '1px solid #333333'},
             children=[
                 html.H2("Anxiety vs Happiness", style={'color': '#FF6B00', 'marginBottom': '20px'}),
-                dcc.Graph(figure=fig7),
+                html.Div(
+                    style={'display': 'flex', 'gap': '20px'},
+                    children=[
+                        html.Div(dcc.Graph(figure=fig8), style={'flex': '1'}),
+                        html.Div(dcc.Graph(figure=fig7), style={'flex': '1'}),
+                    ]
+                ),
             ]
         ),
 
