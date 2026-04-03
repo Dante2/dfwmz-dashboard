@@ -343,6 +343,30 @@ app.layout = html.Div(
             ]
         ),
 
+        # Footer
+        html.Div(
+            style={
+                'padding': '40px',
+                'borderTop': '1px solid #333333',
+                'marginTop': '40px'
+            },
+            children=[
+                html.H3("Data Sources", style={'color': '#FF6B00', 'marginBottom': '20px'}),
+                html.P("Mental Health: ONS Personal Wellbeing Local Authority Time Series (2011-2022)",
+                    style={'color': '#ffffff', 'marginBottom': '10px'}),
+                html.P("Geography: ONS Administrative Geography codes (E09 prefix = London Boroughs)",
+                    style={'color': '#ffffff', 'marginBottom': '10px'}),
+                html.P("Borough Boundaries: GeoJSON via github.com/radoi90/housequest-data",
+                    style={'color': '#ffffff', 'marginBottom': '10px'}),
+                html.Hr(style={'borderColor': '#333333'}),
+                html.P("Protect Your Zen is part of the Don't Fuck With My Zen project — exploring consciousness, technology and mental health through transparent human-AI collaboration.",
+                    style={'color': '#666666', 'fontSize': '14px', 'marginTop': '20px'}),
+                html.A("dontfuckwithmyzen.com",
+                    href="https://dontfuckwithmyzen.com",
+                    style={'color': '#FF6B00', 'fontSize': '14px'})
+            ]
+        ),
+
     ]
 )
 
