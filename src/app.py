@@ -101,6 +101,45 @@ fig6.update_layout(
     coloraxis_showscale=False
 )
 
+# Scatter data
+all_measures_borough = wb[wb['administrative-geography'].str.startswith('E09')]
+all_measures_borough = all_measures_borough[all_measures_borough['Estimate'] == 'Average (mean)'].copy()
+all_measures_borough = all_measures_borough.dropna(subset=['v4_3'])
+
+scatter_yearly = all_measures_borough.groupby(
+    ['Geography', 'measure-of-wellbeing', 'yyyy-yy']
+)['v4_3'].mean().reset_index()
+
+scatter_yearly_pivot = scatter_yearly.pivot_table(
+    index=['Geography', 'yyyy-yy'],
+    columns='measure-of-wellbeing',
+    values='v4_3'
+).reset_index()
+
+scatter_yearly_pivot['year_num'] = scatter_yearly_pivot['yyyy-yy'].str[:4].astype(int)
+
+fig7 = px.scatter(
+    scatter_yearly_pivot,
+    x='anxiety',
+    y='happiness',
+    color='year_num',
+    color_continuous_scale=['#333333', '#FF6B00'],
+    hover_name='Geography',
+    hover_data={'yyyy-yy': True, 'anxiety': ':.2f', 'happiness': ':.2f', 'year_num': False},
+    title='Anxiety vs Happiness by London Borough (All Years)',
+    labels=dict(anxiety='Mean Anxiety Score', happiness='Mean Happiness Score', year_num='Year')
+)
+fig7.update_traces(marker=dict(size=6, opacity=0.7))
+fig7.update_layout(
+    paper_bgcolor='#111111',
+    plot_bgcolor='#111111',
+    font_color='#FF6B00',
+    title_font_color='#FF6B00',
+    height=600,
+    xaxis=dict(gridcolor='#222222'),
+    yaxis=dict(gridcolor='#222222'),
+)
+
 # Load GeoJSON
 url = "https://raw.githubusercontent.com/radoi90/housequest-data/master/london_boroughs.geojson"
 with urllib.request.urlopen(url) as response:
@@ -169,6 +208,15 @@ app.layout = html.Div(
                 html.H2("Deeper London", style={'color': '#FF6B00', 'marginBottom': '20px'}),
                 dcc.Graph(figure=fig5),
                 dcc.Graph(figure=fig6),
+            ]
+        ),
+
+        # Section 3: Wellbeing
+        html.Div(
+            style={'padding': '40px', 'borderTop': '1px solid #333333'},
+            children=[
+                html.H2("Anxiety vs Happiness", style={'color': '#FF6B00', 'marginBottom': '20px'}),
+                dcc.Graph(figure=fig7),
             ]
         ),
 
