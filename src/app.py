@@ -140,6 +140,76 @@ fig7.update_layout(
     yaxis=dict(gridcolor='#222222'),
 )
 
+# UK Regional data
+uk_regions = ['London', 'North East', 'North West', 'Yorkshire and The Humber', 
+              'East Midlands', 'West Midlands', 'East of England', 
+              'South East', 'South West']
+
+regional = wb[wb['Geography'].isin(uk_regions)]
+regional = regional[regional['measure-of-wellbeing'] == 'anxiety']
+regional = regional[regional['Estimate'] == 'Average (mean)'].copy()
+regional = regional.dropna(subset=['v4_3'])
+regional['year_start'] = regional['yyyy-yy'].str[:4].astype(int)
+regional = regional.sort_values('year_start')
+regional = regional.rename(columns={'v4_3': 'mean_anxiety_score'})
+
+# Regional time series
+fig3 = px.line(
+    regional,
+    x='year_start',
+    y='mean_anxiety_score',
+    color='Geography',
+    title='Anxiety Levels by UK Region Over Time (2011-2022)',
+    hover_name='Geography',
+    line_shape='spline',
+)
+fig3.update_traces(
+    line=dict(width=1.5),
+    opacity=0.5,
+    hovertemplate='<b>%{fullData.name}</b><br>Year: %{x}<br>Anxiety: %{y:.2f}<extra></extra>'
+)
+fig3.update_layout(
+    plot_bgcolor='#111111',
+    paper_bgcolor='#111111',
+    font_color='#FF6B00',
+    title_font_color='#FF6B00',
+    xaxis=dict(gridcolor='#222222', title='Year'),
+    yaxis=dict(gridcolor='#222222', title='Mean Anxiety Score'),
+    legend=dict(
+        bgcolor='#111111',
+        font=dict(size=10),
+        itemclick='toggleothers',
+        itemdoubleclick='toggle'
+    ),
+    height=600,
+    hovermode='closest'
+)
+fig3.add_vline(x=2020, line_width=1, line_dash='dash', line_color='#FF6B00', opacity=0.5)
+fig3.add_annotation(
+    x=2020, y=3.5, text="Covid-19", showarrow=True,
+    arrowhead=2, arrowcolor='#FF6B00', font=dict(color='#FF6B00')
+)
+
+# Regional heatmap
+heatmap_regional = regional.pivot(
+    index='Geography', columns='year_start', values='mean_anxiety_score'
+)
+fig4 = px.imshow(
+    heatmap_regional,
+    color_continuous_scale=['#111111', '#FF6B00'],
+    title='Anxiety Levels by UK Region and Year',
+    labels=dict(x='Year', y='Region', color='Anxiety Score'),
+    aspect='auto'
+)
+fig4.update_layout(
+    paper_bgcolor='#111111',
+    plot_bgcolor='#111111',
+    font_color='#FF6B00',
+    title_font_color='#FF6B00',
+    height=500,
+    margin=dict(l=150, r=0, t=40, b=0)
+)
+
 # Load GeoJSON
 url = "https://raw.githubusercontent.com/radoi90/housequest-data/master/london_boroughs.geojson"
 with urllib.request.urlopen(url) as response:
@@ -217,6 +287,21 @@ app.layout = html.Div(
             children=[
                 html.H2("Anxiety vs Happiness", style={'color': '#FF6B00', 'marginBottom': '20px'}),
                 dcc.Graph(figure=fig7),
+            ]
+        ),
+
+        # Section 4: UK Picture
+        html.Div(
+            style={'padding': '40px', 'borderTop': '1px solid #333333'},
+            children=[
+                html.H2("The UK Picture", style={'color': '#FF6B00', 'marginBottom': '20px'}),
+                html.Div(
+                    style={'display': 'flex', 'gap': '20px'},
+                    children=[
+                        html.Div(dcc.Graph(figure=fig3), style={'flex': '1'}),
+                        html.Div(dcc.Graph(figure=fig4), style={'flex': '1'}),
+                    ]
+                ),
             ]
         ),
 
