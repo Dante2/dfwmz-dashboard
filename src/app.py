@@ -6,7 +6,7 @@ import urllib.request
 import json
 
 # Load data
-wb = pd.read_csv('../csv/wellbeing-local-authority-time-series-v4.csv')
+wb = pd.read_csv('csv/wellbeing-local-authority-time-series-v4.csv')
 anxiety = wb[wb['measure-of-wellbeing'] == 'anxiety']
 anxiety_clean = anxiety.dropna(subset=['v4_3'])
 london_boroughs = anxiety_clean[anxiety_clean['administrative-geography'].str.startswith('E09')]
