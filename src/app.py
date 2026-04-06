@@ -337,7 +337,9 @@ app.layout = html.Div(
             id='london',
             style={'padding': '40px'},
             children=[
-                html.H2("London", style={'color': '#FF6B00', 'marginBottom': '20px'}),
+                html.H2("London", style={'color': '#FF6B00', 'marginBottom': '10px'}),
+                html.P("How does anxiety vary across London's 32 boroughs, and how has it changed since 2011?",
+                    style={'color': '#aaaaaa', 'marginBottom': '20px', 'fontSize': '16px'}),
                 html.Div(
                     style={'display': 'flex', 'gap': '20px'},
                     children=[
@@ -353,7 +355,9 @@ app.layout = html.Div(
             id='deeper-london',
             style={'padding': '40px', 'borderTop': '1px solid #333333'},
             children=[
-                html.H2("Deeper London", style={'color': '#FF6B00', 'marginBottom': '20px'}),
+                html.H2("Deeper London", style={'color': '#FF6B00', 'marginBottom': '10px'}),
+                html.P("Explore borough-level anxiety patterns over time. The 2020 Covid spike is visible across all areas.",
+                    style={'color': '#aaaaaa', 'marginBottom': '20px', 'fontSize': '16px'}),
                 dcc.Graph(figure=fig2),
                 dcc.Graph(figure=fig6),
             ]
@@ -364,7 +368,9 @@ app.layout = html.Div(
             id='wellbeing',
             style={'padding': '40px', 'borderTop': '1px solid #333333'},
             children=[
-                html.H2("Anxiety vs Happiness", style={'color': '#FF6B00', 'marginBottom': '20px'}),
+                html.H2("Anxiety vs Happiness", style={'color': '#FF6B00', 'marginBottom': '10px'}),
+                html.P("Does higher anxiety mean lower happiness? The data across all boroughs and years tells a clear story.",
+                    style={'color': '#aaaaaa', 'marginBottom': '20px', 'fontSize': '16px'}),
                 html.Div(
                     style={'display': 'flex', 'gap': '20px'},
                     children=[
@@ -380,7 +386,9 @@ app.layout = html.Div(
             id='uk-picture',
             style={'padding': '40px', 'borderTop': '1px solid #333333'},
             children=[
-                html.H2("The UK Picture", style={'color': '#FF6B00', 'marginBottom': '20px'}),
+                html.H2("The UK Picture", style={'color': '#FF6B00', 'marginBottom': '10px'}),
+                html.P("How does London compare to the rest of England? Spoiler: it's consistently the most anxious region.",
+                    style={'color': '#aaaaaa', 'marginBottom': '20px', 'fontSize': '16px'}),
                 html.Div(
                     style={'display': 'flex', 'gap': '20px'},
                     children=[
