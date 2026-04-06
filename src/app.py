@@ -4,9 +4,11 @@ import pandas as pd
 import plotly.express as px
 import urllib.request
 import json
+import os
 
 # Load data
-wb = pd.read_csv('csv/wellbeing-local-authority-time-series-v4.csv')
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+wb = pd.read_csv(os.path.join(BASE_DIR, 'csv', 'wellbeing-local-authority-time-series-v4.csv'))
 anxiety = wb[wb['measure-of-wellbeing'] == 'anxiety']
 anxiety_clean = anxiety.dropna(subset=['v4_3'])
 london_boroughs = anxiety_clean[anxiety_clean['administrative-geography'].str.startswith('E09')]
@@ -279,19 +281,60 @@ app.layout = html.Div(
     style={'backgroundColor': '#111111', 'minHeight': '100vh', 'fontFamily': 'sans-serif'},
     children=[
 
-        # Header
+        # # Header
+        # html.Div(
+        #     style={'padding': '60px 40px 20px 40px', 'borderBottom': '1px solid #333333'},
+        #     children=[
+        #         html.H1("PROTECT YOUR ZEN",
+        #             style={'color': '#FF6B00', 'fontSize': '48px', 'marginBottom': '10px'}),
+        #         html.P("Exploring mental health across London and the UK through data.",
+        #             style={'color': '#ffffff', 'fontSize': '18px', 'marginBottom': '0px'}),
+        #     ]
+        # ),
+
+        # Navigation
+        html.Div(
+            style={
+                'position': 'sticky',
+                'top': '0',
+                'zIndex': '1000',
+                'backgroundColor': '#111111',
+                'borderBottom': '2px solid #FF6B00',
+                'padding': '15px 40px',
+                'display': 'flex',
+                'justifyContent': 'space-between',
+                'alignItems': 'center'
+            },
+            children=[
+                html.H3("PROTECT YOUR ZEN", style={'color': '#FF6B00', 'margin': '0'}),
+                html.Div(
+                    style={'display': 'flex', 'gap': '30px'},
+                    children=[
+                        html.A("London", href="#london", style={'color': '#ffffff', 'textDecoration': 'none'}),
+                        html.A("Deeper London", href="#deeper-london", style={'color': '#ffffff', 'textDecoration': 'none'}),
+                        html.A("Wellbeing", href="#wellbeing", style={'color': '#ffffff', 'textDecoration': 'none'}),
+                        html.A("UK Picture", href="#uk-picture", style={'color': '#ffffff', 'textDecoration': 'none'}),
+                    ]
+                )
+            ]
+        ),
+
+        # Hero
         html.Div(
             style={'padding': '60px 40px 20px 40px', 'borderBottom': '1px solid #333333'},
             children=[
                 html.H1("PROTECT YOUR ZEN",
                     style={'color': '#FF6B00', 'fontSize': '48px', 'marginBottom': '10px'}),
                 html.P("Exploring mental health across London and the UK through data.",
-                    style={'color': '#ffffff', 'fontSize': '18px', 'marginBottom': '0px'}),
+                    style={'color': '#ffffff', 'fontSize': '18px'}),
+                html.P("Data source: ONS Personal Wellbeing Survey 2011-2022",
+                    style={'color': '#666666', 'fontSize': '14px'}),
             ]
         ),
 
         # Section 1: London
         html.Div(
+            id='london',
             style={'padding': '40px'},
             children=[
                 html.H2("London", style={'color': '#FF6B00', 'marginBottom': '20px'}),
@@ -307,6 +350,7 @@ app.layout = html.Div(
 
         # Section 2: Deeper London
         html.Div(
+            id='deeper-london',
             style={'padding': '40px', 'borderTop': '1px solid #333333'},
             children=[
                 html.H2("Deeper London", style={'color': '#FF6B00', 'marginBottom': '20px'}),
@@ -317,6 +361,7 @@ app.layout = html.Div(
 
         # Section 3: Wellbeing
         html.Div(
+            id='wellbeing',
             style={'padding': '40px', 'borderTop': '1px solid #333333'},
             children=[
                 html.H2("Anxiety vs Happiness", style={'color': '#FF6B00', 'marginBottom': '20px'}),
@@ -332,6 +377,7 @@ app.layout = html.Div(
 
         # Section 4: UK Picture
         html.Div(
+            id='uk-picture',
             style={'padding': '40px', 'borderTop': '1px solid #333333'},
             children=[
                 html.H2("The UK Picture", style={'color': '#FF6B00', 'marginBottom': '20px'}),
