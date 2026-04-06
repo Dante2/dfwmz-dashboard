@@ -273,6 +273,8 @@ fig1.update_layout(
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 
+server = app.server
+
 app.layout = html.Div(
     style={'backgroundColor': '#111111', 'minHeight': '100vh', 'fontFamily': 'sans-serif'},
     children=[
