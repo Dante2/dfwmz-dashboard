@@ -146,17 +146,22 @@ fig7.update_layout(
 scatter_pivot = all_measures_borough.groupby(['Geography', 'measure-of-wellbeing'])['v4_3'].mean().reset_index()
 scatter_pivot = scatter_pivot.pivot(index='Geography', columns='measure-of-wellbeing', values='v4_3').reset_index()
 
+print(scatter_pivot.columns.tolist())
+
 fig8 = px.scatter(
     scatter_pivot,
     x='anxiety',
     y='happiness',
-    size='life-satisfaction',
     hover_name='Geography',
     title='Anxiety vs Happiness by London Borough (Mean)',
     labels=dict(anxiety='Mean Anxiety Score', happiness='Mean Happiness Score')
 )
 fig8.update_traces(
-    marker=dict(color='#FF6B00', opacity=0.7),
+    marker=dict(
+        color='#FF6B00',
+        opacity=0.7,
+        size=scatter_pivot['life-satisfaction'] * 3
+    ),
     hovertemplate='<b>%{hovertext}</b><br>Anxiety: %{x:.2f}<br>Happiness: %{y:.2f}<extra></extra>',
     text=scatter_pivot['Geography'],
     textposition='top center',
@@ -394,7 +399,7 @@ app.layout = html.Div(
             ]
         ),
 
-        # Section 2: Deeper London
+  # Section 2: Deeper London
         html.Div(
             id='deeper-london',
             style={'padding': '40px', 'borderTop': '1px solid #333333', 'scrollMarginTop': '70px'},
@@ -402,12 +407,40 @@ app.layout = html.Div(
                 html.H2("Deeper London", style={'color': '#FF6B00', 'marginBottom': '10px'}),
                 html.P("Explore borough-level anxiety patterns over time. The 2020 Covid spike is visible across all areas.",
                     style={'color': '#aaaaaa', 'marginBottom': '20px', 'fontSize': '16px'}),
+                html.Button(
+                    "What am I looking at? ▼",
+                    id='deeper-london-toggle',
+                    n_clicks=0,
+                    style={
+                        'backgroundColor': 'transparent',
+                        'border': '1px solid #FF6B00',
+                        'color': '#FF6B00',
+                        'padding': '8px 16px',
+                        'cursor': 'pointer',
+                        'marginBottom': '30px',
+                        'fontSize': '14px'
+                    }
+                ),
+                html.Div(
+                    id='deeper-london-explanation',
+                    style={'display': 'none'},
+                    children=[
+                        html.P(
+                            "The line chart shows anxiety scores for all 32 London boroughs from 2011 to 2022. Click a borough in the legend to isolate it — click to reset as well. The dashed orange line marks 2020 and the Covid spike.",
+                            style={'color': '#aaaaaa', 'fontSize': '15px', 'lineHeight': '1.6', 'marginTop': '10px', 'maxWidth': '800px'}
+                        ),
+                        html.P(
+                            "The animated bar chart below tells the same story differently. Press play and watch the rankings shift year by year. Newham starts near the top in 2011 and ends near the bottom by 2022 — one of the most dramatic reversals in the dataset.",
+                            style={'color': '#aaaaaa', 'fontSize': '15px', 'lineHeight': '1.6', 'marginTop': '10px', 'maxWidth': '800px'}
+                        ),
+                    ]
+                ),
                 dcc.Graph(figure=fig2),
                 dcc.Graph(figure=fig6),
             ]
         ),
 
-        # Section 3: Wellbeing
+# Section 3: Wellbeing
         html.Div(
             id='wellbeing',
             style={'padding': '40px', 'borderTop': '1px solid #333333', 'scrollMarginTop': '70px'},
@@ -415,6 +448,34 @@ app.layout = html.Div(
                 html.H2("Anxiety vs Happiness", style={'color': '#FF6B00', 'marginBottom': '10px'}),
                 html.P("Does higher anxiety mean lower happiness? The data across all boroughs and years tells a clear story.",
                     style={'color': '#aaaaaa', 'marginBottom': '20px', 'fontSize': '16px'}),
+                html.Button(
+                    "What am I looking at? ▼",
+                    id='wellbeing-toggle',
+                    n_clicks=0,
+                    style={
+                        'backgroundColor': 'transparent',
+                        'border': '1px solid #FF6B00',
+                        'color': '#FF6B00',
+                        'padding': '8px 16px',
+                        'cursor': 'pointer',
+                        'marginBottom': '30px',
+                        'fontSize': '14px'
+                    }
+                ),
+                html.Div(
+                    id='wellbeing-explanation',
+                    style={'display': 'none'},
+                    children=[
+                        html.P(
+                            "The left chart shows each borough as a single dot — mean anxiety vs mean happiness averaged across all years. The pattern is clear: higher anxiety correlates with lower happiness. Inner London boroughs cluster bottom right, outer London top left.",
+                            style={'color': '#aaaaaa', 'fontSize': '15px', 'lineHeight': '1.6', 'marginTop': '10px', 'maxWidth': '800px'}
+                        ),
+                        html.P(
+                            "The right chart shows every borough in every year — 384 data points. Darker dots are earlier years, orange dots more recent. Hover over any dot to see the borough and year. The negative correlation holds consistently across time.",
+                            style={'color': '#aaaaaa', 'fontSize': '15px', 'lineHeight': '1.6', 'marginTop': '10px', 'maxWidth': '800px'}
+                        ),
+                    ]
+                ),
                 html.Div(
                     style={'display': 'flex', 'gap': '20px'},
                     children=[
@@ -425,7 +486,7 @@ app.layout = html.Div(
             ]
         ),
 
-        # Section 4: UK Picture
+   # Section 4: UK Picture
         html.Div(
             id='uk-picture',
             style={'padding': '40px', 'borderTop': '1px solid #333333', 'scrollMarginTop': '70px'},
@@ -433,6 +494,34 @@ app.layout = html.Div(
                 html.H2("The UK Picture", style={'color': '#FF6B00', 'marginBottom': '10px'}),
                 html.P("How does London compare to the rest of England? Spoiler: it's consistently the most anxious region.",
                     style={'color': '#aaaaaa', 'marginBottom': '20px', 'fontSize': '16px'}),
+                html.Button(
+                    "What am I looking at? ▼",
+                    id='uk-toggle',
+                    n_clicks=0,
+                    style={
+                        'backgroundColor': 'transparent',
+                        'border': '1px solid #FF6B00',
+                        'color': '#FF6B00',
+                        'padding': '8px 16px',
+                        'cursor': 'pointer',
+                        'marginBottom': '30px',
+                        'fontSize': '14px'
+                    }
+                ),
+                html.Div(
+                    id='uk-explanation',
+                    style={'display': 'none'},
+                    children=[
+                        html.P(
+                            "The line chart compares mean anxiety scores across nine English regions from 2011 to 2022. Click a region in the legend to isolate it. London sits consistently above the rest — a gap that persists through the entire period.",
+                            style={'color': '#aaaaaa', 'fontSize': '15px', 'lineHeight': '1.6', 'marginTop': '10px', 'maxWidth': '800px'}
+                        ),
+                        html.P(
+                            "The heatmap shows the same data differently — each row is a region, each column a year. Darker means lower anxiety, brighter orange means higher. The Covid spike in 2020 is visible as a brighter column across almost every region.",
+                            style={'color': '#aaaaaa', 'fontSize': '15px', 'lineHeight': '1.6', 'marginTop': '10px', 'maxWidth': '800px'}
+                        ),
+                    ]
+                ),
                 html.Div(
                     style={'display': 'flex', 'gap': '20px'},
                     children=[
@@ -486,6 +575,36 @@ def toggle_london_explanation(n_clicks):
     prevent_initial_call=True
 )
 def toggle_hero_explanation(n_clicks):
+    if n_clicks % 2 == 1:
+        return {'display': 'block', 'marginTop': '10px'}
+    return {'display': 'none'}
+
+@callback(
+    Output('deeper-london-explanation', 'style'),
+    Input('deeper-london-toggle', 'n_clicks'),
+    prevent_initial_call=True
+)
+def toggle_deeper_london_explanation(n_clicks):
+    if n_clicks % 2 == 1:
+        return {'display': 'block', 'marginTop': '10px'}
+    return {'display': 'none'}
+
+@callback(
+    Output('wellbeing-explanation', 'style'),
+    Input('wellbeing-toggle', 'n_clicks'),
+    prevent_initial_call=True
+)
+def toggle_wellbeing_explanation(n_clicks):
+    if n_clicks % 2 == 1:
+        return {'display': 'block', 'marginTop': '10px'}
+    return {'display': 'none'}
+
+@callback(
+    Output('uk-explanation', 'style'),
+    Input('uk-toggle', 'n_clicks'),
+    prevent_initial_call=True
+)
+def toggle_uk_explanation(n_clicks):
     if n_clicks % 2 == 1:
         return {'display': 'block', 'marginTop': '10px'}
     return {'display': 'none'}
