@@ -1,4 +1,4 @@
-from dash import Dash, html, dcc
+from dash import Dash, html, dcc, Input, Output, callback
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
@@ -281,18 +281,6 @@ app.layout = html.Div(
     style={'backgroundColor': '#111111', 'minHeight': '100vh', 'fontFamily': 'sans-serif'},
     children=[
 
-        # # Header
-        # html.Div(
-        #     style={'padding': '60px 40px 20px 40px', 'borderBottom': '1px solid #333333'},
-        #     children=[
-        #         html.H1("PROTECT YOUR ZEN",
-        #             style={'color': '#FF6B00', 'fontSize': '48px', 'marginBottom': '10px'}),
-        #         html.P("Exploring mental health across London and the UK through data.",
-        #             style={'color': '#ffffff', 'fontSize': '18px', 'marginBottom': '0px'}),
-        #     ]
-        # ),
-
-        # Navigation
         html.Div(
             style={
                 'position': 'sticky',
@@ -319,27 +307,83 @@ app.layout = html.Div(
             ]
         ),
 
-        # Hero
+       # Hero
         html.Div(
             style={'padding': '60px 40px 20px 40px', 'borderBottom': '1px solid #333333'},
             children=[
                 html.H1("PROTECT YOUR ZEN",
-                    style={'color': '#FF6B00', 'fontSize': '48px', 'marginBottom': '10px'}),
+                    style={'color': '#FF6B00', 'fontSize': '48px', 'marginBottom': '20px'}),
                 html.P("Exploring mental health across London and the UK through data.",
-                    style={'color': '#ffffff', 'fontSize': '18px'}),
-                html.P("Data source: ONS Personal Wellbeing Survey 2011-2022",
-                    style={'color': '#666666', 'fontSize': '14px'}),
+                    style={'color': '#ffffff', 'fontSize': '18px', 'marginBottom': '20px'}),
+                html.Button(
+                    "About this dashboard ▼",
+                    id='hero-toggle',
+                    n_clicks=0,
+                    style={
+                        'backgroundColor': 'transparent',
+                        'border': '1px solid #FF6B00',
+                        'color': '#FF6B00',
+                        'padding': '8px 16px',
+                        'cursor': 'pointer',
+                        'marginBottom': '10px',
+                        'fontSize': '14px'
+                    }
+                ),
+                html.Div(
+                    id='hero-explanation',
+                    style={'display': 'none'},
+                    children=[
+                        html.P("Mental health is one of the most talked about subjects of our time. It's also one of the least understood.",
+                            style={'color': '#ffffff', 'fontSize': '16px', 'lineHeight': '1.6', 'marginBottom': '15px', 'maxWidth': '800px'}),
+                        html.P("This dashboard explores anxiety across London's 32 boroughs and UK regions using ONS personal wellbeing data from 2011 to 2022. The findings are sometimes expected. Often they aren't.",
+                            style={'color': '#ffffff', 'fontSize': '16px', 'lineHeight': '1.6', 'marginBottom': '15px', 'maxWidth': '800px'}),
+                        html.P("Newham — one of London's most deprived boroughs — went from the most anxious to the least anxious in a decade. The most expensive, most desirable inner London boroughs are consistently the most anxious. Mobile phone adoption exploded. Anxiety barely moved.",
+                            style={'color': '#ffffff', 'fontSize': '16px', 'lineHeight': '1.6', 'marginBottom': '15px', 'maxWidth': '800px'}),
+                        html.P("The data doesn't have all the answers. But it asks better questions.",
+                            style={'color': '#FF6B00', 'fontSize': '16px', 'lineHeight': '1.6', 'marginBottom': '15px'}),
+                        html.P("Built with Python, Plotly Dash, and ONS open data. Human analysis, AI collaboration, transparent process.",
+                            style={'color': '#666666', 'fontSize': '14px'}),
+                    ]
+                ),
             ]
         ),
-
         # Section 1: London
         html.Div(
             id='london',
-            style={'padding': '40px', 'scrollMarginTop': '70px'},
+            style={'padding': '20px 40px 40px 40px', 'scrollMarginTop': '70px'},
             children=[
                 html.H2("London", style={'color': '#FF6B00', 'marginBottom': '10px'}),
                 html.P("How does anxiety vary across London's 32 boroughs, and how has it changed since 2011?",
                     style={'color': '#aaaaaa', 'marginBottom': '20px', 'fontSize': '16px'}),
+                html.Button(
+                    "What am I looking at? ▼",
+                    id='london-toggle',
+                    n_clicks=0,
+                    style={
+                        'backgroundColor': 'transparent',
+                        'border': '1px solid #FF6B00',
+                        'color': '#FF6B00',
+                        'padding': '8px 16px',
+                        'cursor': 'pointer',
+                        'marginTop': '10px',
+                        'marginBottom': '30px',
+                        'fontSize': '14px'
+                    }
+                ),
+                html.Div(
+                    id='london-explanation',
+                    style={'display': 'none'},
+                    children=[
+                        html.P(
+                            "The choropleth map on the left shows mean anxiety scores averaged across 2011-2022. Darker boroughs are less anxious, brighter orange more so. The pattern is striking — inner London consistently outscores outer London.",
+                            style={'color': '#aaaaaa', 'fontSize': '15px', 'lineHeight': '1.6', 'marginTop': '15px', 'maxWidth': '800px'}
+                        ),
+                        html.P(
+                            "The heatmap on the right breaks it down by year. Each row is a borough, each column a year. The brighter the cell, the higher the anxiety score. You can see the 2020 Covid spike across almost all boroughs.",
+                            style={'color': '#aaaaaa', 'fontSize': '15px', 'lineHeight': '1.6', 'marginTop': '15px', 'maxWidth': '800px'}
+                        ),                        
+                    ]
+                ),
                 html.Div(
                     style={'display': 'flex', 'gap': '20px'},
                     children=[
@@ -425,6 +469,26 @@ app.layout = html.Div(
 
     ]
 )
+
+@callback(
+    Output('london-explanation', 'style'),
+    Input('london-toggle', 'n_clicks'),
+    prevent_initial_call=True
+)
+def toggle_london_explanation(n_clicks):
+    if n_clicks % 2 == 1:
+        return {'display': 'block', 'marginTop': '10px'}
+    return {'display': 'none'}
+
+@callback(
+    Output('hero-explanation', 'style'),
+    Input('hero-toggle', 'n_clicks'),
+    prevent_initial_call=True
+)
+def toggle_hero_explanation(n_clicks):
+    if n_clicks % 2 == 1:
+        return {'display': 'block', 'marginTop': '10px'}
+    return {'display': 'none'}
 
 if __name__ == '__main__':
     app.run(debug=True)
