@@ -335,7 +335,7 @@ app.layout = html.Div(
         # Section 1: London
         html.Div(
             id='london',
-            style={'padding': '40px'},
+            style={'padding': '40px', 'scrollMarginTop': '70px'},
             children=[
                 html.H2("London", style={'color': '#FF6B00', 'marginBottom': '10px'}),
                 html.P("How does anxiety vary across London's 32 boroughs, and how has it changed since 2011?",
@@ -353,7 +353,7 @@ app.layout = html.Div(
         # Section 2: Deeper London
         html.Div(
             id='deeper-london',
-            style={'padding': '40px', 'borderTop': '1px solid #333333'},
+            style={'padding': '40px', 'borderTop': '1px solid #333333', 'scrollMarginTop': '70px'},
             children=[
                 html.H2("Deeper London", style={'color': '#FF6B00', 'marginBottom': '10px'}),
                 html.P("Explore borough-level anxiety patterns over time. The 2020 Covid spike is visible across all areas.",
@@ -366,7 +366,7 @@ app.layout = html.Div(
         # Section 3: Wellbeing
         html.Div(
             id='wellbeing',
-            style={'padding': '40px', 'borderTop': '1px solid #333333'},
+            style={'padding': '40px', 'borderTop': '1px solid #333333', 'scrollMarginTop': '70px'},
             children=[
                 html.H2("Anxiety vs Happiness", style={'color': '#FF6B00', 'marginBottom': '10px'}),
                 html.P("Does higher anxiety mean lower happiness? The data across all boroughs and years tells a clear story.",
@@ -384,7 +384,7 @@ app.layout = html.Div(
         # Section 4: UK Picture
         html.Div(
             id='uk-picture',
-            style={'padding': '40px', 'borderTop': '1px solid #333333'},
+            style={'padding': '40px', 'borderTop': '1px solid #333333', 'scrollMarginTop': '70px'},
             children=[
                 html.H2("The UK Picture", style={'color': '#FF6B00', 'marginBottom': '10px'}),
                 html.P("How does London compare to the rest of England? Spoiler: it's consistently the most anxious region.",
