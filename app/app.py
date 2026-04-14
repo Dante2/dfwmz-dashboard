@@ -1,0 +1,613 @@
+from dash import Dash, html, dcc, Input, Output, callback
+import dash_bootstrap_components as dbc
+import pandas as pd
+import plotly.express as px
+import urllib.request
+import json
+import os
+
+# Load data
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+wb = pd.read_csv(os.path.join(BASE_DIR, 'csv', 'wellbeing-local-authority-time-series-v4.csv'))
+anxiety = wb[wb['measure-of-wellbeing'] == 'anxiety']
+anxiety_clean = anxiety.dropna(subset=['v4_3'])
+london_boroughs = anxiety_clean[anxiety_clean['administrative-geography'].str.startswith('E09')]
+london_boroughs = london_boroughs[london_boroughs['Estimate'] == 'Average (mean)'].copy()
+london_boroughs = london_boroughs.rename(columns={'v4_3': 'mean_anxiety_score'})
+borough_means = london_boroughs.groupby('Geography')['mean_anxiety_score'].mean().reset_index()
+
+# Time series data
+london_boroughs_ts = london_boroughs.copy()
+london_boroughs_ts['year_start'] = london_boroughs_ts['yyyy-yy'].str[:4].astype(int)
+london_boroughs_ts = london_boroughs_ts.sort_values(['Geography', 'year_start'])
+
+# Build time series chart
+fig2 = px.line(
+    london_boroughs_ts,
+    x='year_start',
+    y='mean_anxiety_score',
+    color='Geography',
+    title='Anxiety Levels by London Borough Over Time (2011-2022)',
+    hover_name='Geography',
+    line_shape='spline',
+)
+fig2.update_traces(
+    line=dict(width=1.5),
+    opacity=0.5,
+    hovertemplate='<b>%{fullData.name}</b><br>Year: %{x}<br>Anxiety: %{y:.2f}<extra></extra>'
+)
+fig2.update_layout(
+    plot_bgcolor='#111111',
+    paper_bgcolor='#111111',
+    font_color='#FF6B00',
+    title_font_color='#FF6B00',
+    xaxis=dict(gridcolor='#222222', title='Year'),
+    yaxis=dict(gridcolor='#222222', title='Mean Anxiety Score'),
+    legend=dict(
+        bgcolor='#111111',
+        font=dict(size=10),
+        itemclick='toggleothers',
+        itemdoubleclick='toggle'
+    ),
+    height=600,
+    hovermode='closest'
+)
+fig2.add_vline(x=2020, line_width=1, line_dash='dash', line_color='#FF6B00', opacity=0.5)
+fig2.add_annotation(
+    x=2020, y=4.0, text="Covid-19", showarrow=True,
+    arrowhead=2, arrowcolor='#FF6B00', font=dict(color='#FF6B00')
+)
+
+# Borough heatmap
+heatmap_data = london_boroughs_ts.pivot(
+    index='Geography',
+    columns='year_start',
+    values='mean_anxiety_score'
+)
+fig5 = px.imshow(
+    heatmap_data,
+    color_continuous_scale=['#111111', '#FF6B00'],
+    title='Anxiety Levels by London Borough and Year',
+    labels=dict(x='Year', y='Borough', color='Anxiety Score'),
+    aspect='auto'
+)
+fig5.update_layout(
+    paper_bgcolor='#111111',
+    plot_bgcolor='#111111',
+    font_color='#FF6B00',
+    title_font_color='#FF6B00',
+    height=700,
+    margin=dict(l=150, r=0, t=40, b=0)
+)
+
+# Animated race
+fig6 = px.bar(
+    london_boroughs_ts.sort_values(['year_start', 'mean_anxiety_score'], ascending=[True, True]),
+    x='mean_anxiety_score',
+    y='Geography',
+    orientation='h',
+    animation_frame='year_start',
+    range_x=[2, 4.5],
+    color='mean_anxiety_score',
+    color_continuous_scale=['#111111', '#FF6B00'],
+    title='London Borough Anxiety Scores Over Time',
+    labels=dict(mean_anxiety_score='Mean Anxiety Score', Geography='Borough')
+)
+fig6.update_layout(
+    paper_bgcolor='#111111',
+    plot_bgcolor='#111111',
+    font_color='#FF6B00',
+    title_font_color='#FF6B00',
+    height=700,
+    margin=dict(l=150, r=0, t=40, b=0),
+    coloraxis_showscale=False
+)
+
+# Scatter data
+all_measures_borough = wb[wb['administrative-geography'].str.startswith('E09')]
+all_measures_borough = all_measures_borough[all_measures_borough['Estimate'] == 'Average (mean)'].copy()
+all_measures_borough = all_measures_borough.dropna(subset=['v4_3'])
+
+scatter_yearly = all_measures_borough.groupby(
+    ['Geography', 'measure-of-wellbeing', 'yyyy-yy']
+)['v4_3'].mean().reset_index()
+
+scatter_yearly_pivot = scatter_yearly.pivot_table(
+    index=['Geography', 'yyyy-yy'],
+    columns='measure-of-wellbeing',
+    values='v4_3'
+).reset_index()
+
+scatter_yearly_pivot['year_num'] = scatter_yearly_pivot['yyyy-yy'].str[:4].astype(int)
+
+fig7 = px.scatter(
+    scatter_yearly_pivot,
+    x='anxiety',
+    y='happiness',
+    color='year_num',
+    color_continuous_scale=['#333333', '#FF6B00'],
+    hover_name='Geography',
+    hover_data={'yyyy-yy': True, 'anxiety': ':.2f', 'happiness': ':.2f', 'year_num': False},
+    title='Anxiety vs Happiness by London Borough (All Years)',
+    labels=dict(anxiety='Mean Anxiety Score', happiness='Mean Happiness Score', year_num='Year')
+)
+fig7.update_traces(marker=dict(size=6, opacity=0.7))
+fig7.update_layout(
+    paper_bgcolor='#111111',
+    plot_bgcolor='#111111',
+    font_color='#FF6B00',
+    title_font_color='#FF6B00',
+    height=600,
+    xaxis=dict(gridcolor='#222222'),
+    yaxis=dict(gridcolor='#222222'),
+)
+
+# Single dot scatter
+scatter_pivot = all_measures_borough.groupby(['Geography', 'measure-of-wellbeing'])['v4_3'].mean().reset_index()
+scatter_pivot = scatter_pivot.pivot(index='Geography', columns='measure-of-wellbeing', values='v4_3').reset_index()
+
+print(scatter_pivot.columns.tolist())
+
+fig8 = px.scatter(
+    scatter_pivot,
+    x='anxiety',
+    y='happiness',
+    hover_name='Geography',
+    title='Anxiety vs Happiness by London Borough (Mean)',
+    labels=dict(anxiety='Mean Anxiety Score', happiness='Mean Happiness Score')
+)
+fig8.update_traces(
+    marker=dict(
+        color='#FF6B00',
+        opacity=0.7,
+        size=scatter_pivot['life-satisfaction'] * 3
+    ),
+    hovertemplate='<b>%{hovertext}</b><br>Anxiety: %{x:.2f}<br>Happiness: %{y:.2f}<extra></extra>',
+    text=scatter_pivot['Geography'],
+    textposition='top center',
+    textfont=dict(size=8, color='#FF6B00'),
+    mode='markers+text'
+)
+fig8.update_layout(
+    paper_bgcolor='#111111',
+    plot_bgcolor='#111111',
+    font_color='#FF6B00',
+    title_font_color='#FF6B00',
+    height=600,
+    xaxis=dict(gridcolor='#222222'),
+    yaxis=dict(gridcolor='#222222'),
+    showlegend=False
+)
+
+# UK Regional data
+uk_regions = ['London', 'North East', 'North West', 'Yorkshire and The Humber', 
+              'East Midlands', 'West Midlands', 'East of England', 
+              'South East', 'South West']
+
+regional = wb[wb['Geography'].isin(uk_regions)]
+regional = regional[regional['measure-of-wellbeing'] == 'anxiety']
+regional = regional[regional['Estimate'] == 'Average (mean)'].copy()
+regional = regional.dropna(subset=['v4_3'])
+regional['year_start'] = regional['yyyy-yy'].str[:4].astype(int)
+regional = regional.sort_values('year_start')
+regional = regional.rename(columns={'v4_3': 'mean_anxiety_score'})
+
+# Regional time series
+fig3 = px.line(
+    regional,
+    x='year_start',
+    y='mean_anxiety_score',
+    color='Geography',
+    title='Anxiety Levels by UK Region Over Time (2011-2022)',
+    hover_name='Geography',
+    line_shape='spline',
+)
+fig3.update_traces(
+    line=dict(width=1.5),
+    opacity=0.5,
+    hovertemplate='<b>%{fullData.name}</b><br>Year: %{x}<br>Anxiety: %{y:.2f}<extra></extra>'
+)
+fig3.update_layout(
+    plot_bgcolor='#111111',
+    paper_bgcolor='#111111',
+    font_color='#FF6B00',
+    title_font_color='#FF6B00',
+    xaxis=dict(gridcolor='#222222', title='Year'),
+    yaxis=dict(gridcolor='#222222', title='Mean Anxiety Score'),
+    legend=dict(
+        bgcolor='#111111',
+        font=dict(size=10),
+        itemclick='toggleothers',
+        itemdoubleclick='toggle'
+    ),
+    height=600,
+    hovermode='closest'
+)
+fig3.add_vline(x=2020, line_width=1, line_dash='dash', line_color='#FF6B00', opacity=0.5)
+fig3.add_annotation(
+    x=2020, y=3.5, text="Covid-19", showarrow=True,
+    arrowhead=2, arrowcolor='#FF6B00', font=dict(color='#FF6B00')
+)
+
+# Regional heatmap
+heatmap_regional = regional.pivot(
+    index='Geography', columns='year_start', values='mean_anxiety_score'
+)
+fig4 = px.imshow(
+    heatmap_regional,
+    color_continuous_scale=['#111111', '#FF6B00'],
+    title='Anxiety Levels by UK Region and Year',
+    labels=dict(x='Year', y='Region', color='Anxiety Score'),
+    aspect='auto'
+)
+fig4.update_layout(
+    paper_bgcolor='#111111',
+    plot_bgcolor='#111111',
+    font_color='#FF6B00',
+    title_font_color='#FF6B00',
+    height=500,
+    margin=dict(l=150, r=0, t=40, b=0)
+)
+
+# Load GeoJSON
+url = "https://raw.githubusercontent.com/radoi90/housequest-data/master/london_boroughs.geojson"
+with urllib.request.urlopen(url) as response:
+    london_geojson = json.load(response)
+
+# Build choropleth
+fig1 = px.choropleth_mapbox(
+    borough_means,
+    geojson=london_geojson,
+    locations='Geography',
+    featureidkey='properties.name',
+    color='mean_anxiety_score',
+    color_continuous_scale=['#1a1a1a', '#FF6B00'],
+    mapbox_style='carto-darkmatter',
+    zoom=8.5,
+    center={'lat': 51.5074, 'lon': -0.1278},
+    opacity=0.8,
+    title='Mean Anxiety Score by London Borough (2011-2022)',
+    hover_name='Geography',
+    hover_data={'mean_anxiety_score': ':.2f'}
+)
+fig1.update_layout(
+    paper_bgcolor='#111111',
+    font_color='#FF6B00',
+    title_font_color='#FF6B00',
+    margin=dict(l=0, r=0, t=40, b=0),
+    height=600
+)
+
+app = Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
+
+server = app.server
+
+app.layout = html.Div(
+    style={'backgroundColor': '#111111', 'minHeight': '100vh', 'fontFamily': 'sans-serif'},
+    children=[
+
+        html.Div(
+            style={
+                'position': 'sticky',
+                'top': '0',
+                'zIndex': '1000',
+                'backgroundColor': '#111111',
+                'borderBottom': '2px solid #FF6B00',
+                'padding': '15px 40px',
+                'display': 'flex',
+                'justifyContent': 'space-between',
+                'alignItems': 'center'
+            },
+            children=[
+                html.H3("PROTECT YOUR ZEN", style={'color': '#FF6B00', 'margin': '0'}),
+                html.Div(
+                    style={'display': 'flex', 'gap': '30px'},
+                    children=[
+                        html.A("London", href="#london", style={'color': '#ffffff', 'textDecoration': 'none'}),
+                        html.A("Deeper London", href="#deeper-london", style={'color': '#ffffff', 'textDecoration': 'none'}),
+                        html.A("Wellbeing", href="#wellbeing", style={'color': '#ffffff', 'textDecoration': 'none'}),
+                        html.A("UK Picture", href="#uk-picture", style={'color': '#ffffff', 'textDecoration': 'none'}),
+                    ]
+                )
+            ]
+        ),
+
+       # Hero
+        html.Div(
+            style={'padding': '60px 40px 20px 40px', 'borderBottom': '1px solid #333333'},
+            children=[
+                html.H1("PROTECT YOUR ZEN",
+                    style={'color': '#FF6B00', 'fontSize': '48px', 'marginBottom': '20px'}),
+                html.P("Exploring mental health across London and the UK through data.",
+                    style={'color': '#ffffff', 'fontSize': '18px', 'marginBottom': '20px'}),
+                html.Button(
+                    "About this dashboard ▼",
+                    id='hero-toggle',
+                    n_clicks=0,
+                    style={
+                        'backgroundColor': 'transparent',
+                        'border': '1px solid #FF6B00',
+                        'color': '#FF6B00',
+                        'padding': '8px 16px',
+                        'cursor': 'pointer',
+                        'marginBottom': '10px',
+                        'fontSize': '14px'
+                    }
+                ),
+                html.Div(
+                    id='hero-explanation',
+                    style={'display': 'none'},
+                    children=[
+                        html.P("Mental health is one of the most talked about subjects of our time. It's also one of the least understood.",
+                            style={'color': '#ffffff', 'fontSize': '16px', 'lineHeight': '1.6', 'marginBottom': '15px', 'maxWidth': '800px'}),
+                        html.P("This dashboard explores anxiety across London's 32 boroughs and UK regions using ONS personal wellbeing data from 2011 to 2022. The findings are sometimes expected. Often they aren't.",
+                            style={'color': '#ffffff', 'fontSize': '16px', 'lineHeight': '1.6', 'marginBottom': '15px', 'maxWidth': '800px'}),
+                        html.P("Newham — one of London's most deprived boroughs — went from the most anxious to the least anxious in a decade. The most expensive, most desirable inner London boroughs are consistently the most anxious. Mobile phone adoption exploded. Anxiety barely moved.",
+                            style={'color': '#ffffff', 'fontSize': '16px', 'lineHeight': '1.6', 'marginBottom': '15px', 'maxWidth': '800px'}),
+                        html.P("The data doesn't have all the answers. But it asks better questions.",
+                            style={'color': '#FF6B00', 'fontSize': '16px', 'lineHeight': '1.6', 'marginBottom': '15px'}),
+                        html.P("Built with Python, Plotly Dash, and ONS open data. Human analysis, AI collaboration, transparent process.",
+                            style={'color': '#666666', 'fontSize': '14px'}),
+                    ]
+                ),
+            ]
+        ),
+        # Section 1: London
+        html.Div(
+            id='london',
+            style={'padding': '20px 40px 40px 40px', 'scrollMarginTop': '70px'},
+            children=[
+                html.H2("London", style={'color': '#FF6B00', 'marginBottom': '10px'}),
+                html.P("How does anxiety vary across London's 32 boroughs, and how has it changed since 2011?",
+                    style={'color': '#aaaaaa', 'marginBottom': '20px', 'fontSize': '16px'}),
+                html.Button(
+                    "What am I looking at? ▼",
+                    id='london-toggle',
+                    n_clicks=0,
+                    style={
+                        'backgroundColor': 'transparent',
+                        'border': '1px solid #FF6B00',
+                        'color': '#FF6B00',
+                        'padding': '8px 16px',
+                        'cursor': 'pointer',
+                        'marginTop': '10px',
+                        'marginBottom': '30px',
+                        'fontSize': '14px'
+                    }
+                ),
+                html.Div(
+                    id='london-explanation',
+                    style={'display': 'none'},
+                    children=[
+                        html.P(
+                            "The choropleth map on the left shows mean anxiety scores averaged across 2011-2022. Darker boroughs are less anxious, brighter orange more so. The pattern is striking — inner London consistently outscores outer London.",
+                            style={'color': '#aaaaaa', 'fontSize': '15px', 'lineHeight': '1.6', 'marginTop': '15px', 'maxWidth': '800px'}
+                        ),
+                        html.P(
+                            "The heatmap on the right breaks it down by year. Each row is a borough, each column a year. The brighter the cell, the higher the anxiety score. You can see the 2020 Covid spike across almost all boroughs.",
+                            style={'color': '#aaaaaa', 'fontSize': '15px', 'lineHeight': '1.6', 'marginTop': '15px', 'maxWidth': '800px'}
+                        ),                        
+                    ]
+                ),
+                html.Div(
+                    style={'display': 'flex', 'gap': '20px'},
+                    children=[
+                        html.Div(dcc.Graph(figure=fig1), style={'flex': '1'}),
+                        html.Div(dcc.Graph(figure=fig5), style={'flex': '1'}),
+                    ]
+                ),
+            ]
+        ),
+
+  # Section 2: Deeper London
+        html.Div(
+            id='deeper-london',
+            style={'padding': '40px', 'borderTop': '1px solid #333333', 'scrollMarginTop': '70px'},
+            children=[
+                html.H2("Deeper London", style={'color': '#FF6B00', 'marginBottom': '10px'}),
+                html.P("Explore borough-level anxiety patterns over time. The 2020 Covid spike is visible across all areas.",
+                    style={'color': '#aaaaaa', 'marginBottom': '20px', 'fontSize': '16px'}),
+                html.Button(
+                    "What am I looking at? ▼",
+                    id='deeper-london-toggle',
+                    n_clicks=0,
+                    style={
+                        'backgroundColor': 'transparent',
+                        'border': '1px solid #FF6B00',
+                        'color': '#FF6B00',
+                        'padding': '8px 16px',
+                        'cursor': 'pointer',
+                        'marginBottom': '30px',
+                        'fontSize': '14px'
+                    }
+                ),
+                html.Div(
+                    id='deeper-london-explanation',
+                    style={'display': 'none'},
+                    children=[
+                        html.P(
+                            "The line chart shows anxiety scores for all 32 London boroughs from 2011 to 2022. Click a borough in the legend to isolate it — click to reset as well. The dashed orange line marks 2020 and the Covid spike.",
+                            style={'color': '#aaaaaa', 'fontSize': '15px', 'lineHeight': '1.6', 'marginTop': '10px', 'maxWidth': '800px'}
+                        ),
+                        html.P(
+                            "The animated bar chart below tells the same story differently. Press play and watch the rankings shift year by year. Newham starts near the top in 2011 and ends near the bottom by 2022 — one of the most dramatic reversals in the dataset.",
+                            style={'color': '#aaaaaa', 'fontSize': '15px', 'lineHeight': '1.6', 'marginTop': '10px', 'maxWidth': '800px'}
+                        ),
+                    ]
+                ),
+                dcc.Graph(figure=fig2),
+                dcc.Graph(figure=fig6),
+            ]
+        ),
+
+# Section 3: Wellbeing
+        html.Div(
+            id='wellbeing',
+            style={'padding': '40px', 'borderTop': '1px solid #333333', 'scrollMarginTop': '70px'},
+            children=[
+                html.H2("Anxiety vs Happiness", style={'color': '#FF6B00', 'marginBottom': '10px'}),
+                html.P("Does higher anxiety mean lower happiness? The data across all boroughs and years tells a clear story.",
+                    style={'color': '#aaaaaa', 'marginBottom': '20px', 'fontSize': '16px'}),
+                html.Button(
+                    "What am I looking at? ▼",
+                    id='wellbeing-toggle',
+                    n_clicks=0,
+                    style={
+                        'backgroundColor': 'transparent',
+                        'border': '1px solid #FF6B00',
+                        'color': '#FF6B00',
+                        'padding': '8px 16px',
+                        'cursor': 'pointer',
+                        'marginBottom': '30px',
+                        'fontSize': '14px'
+                    }
+                ),
+                html.Div(
+                    id='wellbeing-explanation',
+                    style={'display': 'none'},
+                    children=[
+                        html.P(
+                            "The left chart shows each borough as a single dot — mean anxiety vs mean happiness averaged across all years. The pattern is clear: higher anxiety correlates with lower happiness. Inner London boroughs cluster bottom right, outer London top left.",
+                            style={'color': '#aaaaaa', 'fontSize': '15px', 'lineHeight': '1.6', 'marginTop': '10px', 'maxWidth': '800px'}
+                        ),
+                        html.P(
+                            "The right chart shows every borough in every year — 384 data points. Darker dots are earlier years, orange dots more recent. Hover over any dot to see the borough and year. The negative correlation holds consistently across time.",
+                            style={'color': '#aaaaaa', 'fontSize': '15px', 'lineHeight': '1.6', 'marginTop': '10px', 'maxWidth': '800px'}
+                        ),
+                    ]
+                ),
+                html.Div(
+                    style={'display': 'flex', 'gap': '20px'},
+                    children=[
+                        html.Div(dcc.Graph(figure=fig8), style={'flex': '1'}),
+                        html.Div(dcc.Graph(figure=fig7), style={'flex': '1'}),
+                    ]
+                ),
+            ]
+        ),
+
+   # Section 4: UK Picture
+        html.Div(
+            id='uk-picture',
+            style={'padding': '40px', 'borderTop': '1px solid #333333', 'scrollMarginTop': '70px'},
+            children=[
+                html.H2("The UK Picture", style={'color': '#FF6B00', 'marginBottom': '10px'}),
+                html.P("How does London compare to the rest of England? Spoiler: it's consistently the most anxious region.",
+                    style={'color': '#aaaaaa', 'marginBottom': '20px', 'fontSize': '16px'}),
+                html.Button(
+                    "What am I looking at? ▼",
+                    id='uk-toggle',
+                    n_clicks=0,
+                    style={
+                        'backgroundColor': 'transparent',
+                        'border': '1px solid #FF6B00',
+                        'color': '#FF6B00',
+                        'padding': '8px 16px',
+                        'cursor': 'pointer',
+                        'marginBottom': '30px',
+                        'fontSize': '14px'
+                    }
+                ),
+                html.Div(
+                    id='uk-explanation',
+                    style={'display': 'none'},
+                    children=[
+                        html.P(
+                            "The line chart compares mean anxiety scores across nine English regions from 2011 to 2022. Click a region in the legend to isolate it. London sits consistently above the rest — a gap that persists through the entire period.",
+                            style={'color': '#aaaaaa', 'fontSize': '15px', 'lineHeight': '1.6', 'marginTop': '10px', 'maxWidth': '800px'}
+                        ),
+                        html.P(
+                            "The heatmap shows the same data differently — each row is a region, each column a year. Darker means lower anxiety, brighter orange means higher. The Covid spike in 2020 is visible as a brighter column across almost every region.",
+                            style={'color': '#aaaaaa', 'fontSize': '15px', 'lineHeight': '1.6', 'marginTop': '10px', 'maxWidth': '800px'}
+                        ),
+                    ]
+                ),
+                html.Div(
+                    style={'display': 'flex', 'gap': '20px'},
+                    children=[
+                        html.Div(dcc.Graph(figure=fig3), style={'flex': '1'}),
+                        html.Div(dcc.Graph(figure=fig4), style={'flex': '1'}),
+                    ]
+                ),
+            ]
+        ),
+
+        # Footer
+        html.Div(
+            style={
+                'padding': '40px',
+                'borderTop': '1px solid #333333',
+                'marginTop': '40px'
+            },
+            children=[
+                html.H3("Data Sources", style={'color': '#FF6B00', 'marginBottom': '20px'}),
+                html.P("Mental Health: ONS Personal Wellbeing Local Authority Time Series (2011-2022)",
+                    style={'color': '#ffffff', 'marginBottom': '10px'}),
+                html.P("Geography: ONS Administrative Geography codes (E09 prefix = London Boroughs)",
+                    style={'color': '#ffffff', 'marginBottom': '10px'}),
+                html.P("Borough Boundaries: GeoJSON via github.com/radoi90/housequest-data",
+                    style={'color': '#ffffff', 'marginBottom': '10px'}),
+                html.Hr(style={'borderColor': '#333333'}),
+                html.P("Protect Your Zen is part of the Don't Fuck With My Zen project — exploring consciousness, technology and mental health through transparent human-AI collaboration.",
+                    style={'color': '#666666', 'fontSize': '14px', 'marginTop': '20px'}),
+                html.A("dontfuckwithmyzen.com",
+                    href="https://dontfuckwithmyzen.com",
+                    style={'color': '#FF6B00', 'fontSize': '14px'})
+            ]
+        ),
+
+    ]
+)
+
+@callback(
+    Output('london-explanation', 'style'),
+    Input('london-toggle', 'n_clicks'),
+    prevent_initial_call=True
+)
+def toggle_london_explanation(n_clicks):
+    if n_clicks % 2 == 1:
+        return {'display': 'block', 'marginTop': '10px'}
+    return {'display': 'none'}
+
+@callback(
+    Output('hero-explanation', 'style'),
+    Input('hero-toggle', 'n_clicks'),
+    prevent_initial_call=True
+)
+def toggle_hero_explanation(n_clicks):
+    if n_clicks % 2 == 1:
+        return {'display': 'block', 'marginTop': '10px'}
+    return {'display': 'none'}
+
+@callback(
+    Output('deeper-london-explanation', 'style'),
+    Input('deeper-london-toggle', 'n_clicks'),
+    prevent_initial_call=True
+)
+def toggle_deeper_london_explanation(n_clicks):
+    if n_clicks % 2 == 1:
+        return {'display': 'block', 'marginTop': '10px'}
+    return {'display': 'none'}
+
+@callback(
+    Output('wellbeing-explanation', 'style'),
+    Input('wellbeing-toggle', 'n_clicks'),
+    prevent_initial_call=True
+)
+def toggle_wellbeing_explanation(n_clicks):
+    if n_clicks % 2 == 1:
+        return {'display': 'block', 'marginTop': '10px'}
+    return {'display': 'none'}
+
+@callback(
+    Output('uk-explanation', 'style'),
+    Input('uk-toggle', 'n_clicks'),
+    prevent_initial_call=True
+)
+def toggle_uk_explanation(n_clicks):
+    if n_clicks % 2 == 1:
+        return {'display': 'block', 'marginTop': '10px'}
+    return {'display': 'none'}
+
+if __name__ == '__main__':
+    app.run(debug=True)
